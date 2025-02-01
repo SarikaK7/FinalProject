@@ -6,12 +6,18 @@ from sklearn.preprocessing import OneHotEncoder
 from PIL import Image  # Required to process the image
 
 # Load the trained model
-try:
-    model = pickle.load(open('model.sav', 'rb'))
-    expected_features = model.feature_names_in_ if hasattr(model, 'feature_names_in_') else None
-except Exception as e:
-    st.error(f"Error loading model: {str(e)}")
-    st.stop()
+# try:
+#     model = pickle.load(open('model.pkl', 'rb'))
+#     expected_features = model.feature_names_in_ if hasattr(model, 'feature_names_in_') else None
+# except Exception as e:
+#     st.error(f"Error loading model: {str(e)}")
+#     st.stop()
+with open('model.pkl', 'wb') as file:
+    pickle.dump(trained_model, file)
+
+# Loading the model
+with open('model.pkl', 'rb') as file:
+    model = pickle.load(file)
 
 # Title
 st.markdown(
@@ -51,7 +57,7 @@ with col1:
     horsepower = st.number_input("Horsepower (HP)", min_value=50, max_value=1000, step=5)
     city_fuel_economy = st.number_input("City Fuel Economy (km/L)", min_value=5, max_value=50, step=1)
     highway_fuel_economy = st.number_input("Highway Fuel Economy (km/L)", min_value=5, max_value=50, step=1)
-    fuel_tank_volume = st.number_input("Fuel Tank Volume (Liters)", min_value=20, max_value=200, step=1)
+    fuel_tank_volume = st.number_input("Fuel Tank Volume (Liters)", min_value=0, max_value=200, step=1)
     maximum_seating = st.selectbox("Maximum Seating", [2, 4, 5, 7, 8])
     make_name = st.selectbox("Make Name", ["Toyota", "Honda", "Ford", "BMW", "Audi", "Mercedes", "Chevrolet"])
 
@@ -61,6 +67,7 @@ with col2:
     height = st.number_input("Car Height (cm)", min_value=100, max_value=250, step=1)
     engine_displacement = st.number_input("Engine Displacement (L)", min_value=0.5, max_value=8.0, step=0.1)
     mileage = st.number_input("Mileage (km)", min_value=0, max_value=500000, step=1000)
+    wheelBase=st.number_input("wheelBase",min_value=0, max_value=500000, step=1000)
     engine_cylinders = st.selectbox("Engine Cylinders", [3, 4, 5, 6, 8])
     listing_color = st.selectbox("Listing Color", ["Black", "White", "Red", "Blue", "Silver", "Gray", "Green"])
 
@@ -81,11 +88,13 @@ user_data = pd.DataFrame({
     "Length": [length],
     "Height": [height],
     "Engine Displacement": [engine_displacement],
-    "Mileage": [mileage]
+    "Mileage": [mileage],
+    "Weelbase":[wheelBase]
 })
 
 # Create user input DataFrame for categorical features
 categorical_data = pd.DataFrame({
+    # "WheelSytem":[wheel_system],
     "BodyType": [body_type],
     "FuelType": [fuel_type],
     "MaximumSeating": [maximum_seating],
@@ -130,6 +139,6 @@ if st.button("Predict Car Price"):
     try:
         # Make prediction
         predicted_price = model.predict(user_data)
-        st.success(f'Predicted Car Price: ₹{np.round(predicted_price[0], 2)}')
+        st.success(f'Predicted Car Price: ${np.round(predicted_price[0], 2)}')
     except Exception as e:  
         st.error(f"Prediction Error: {str(e)}")
