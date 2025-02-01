@@ -5,31 +5,22 @@ import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
 from PIL import Image  # Required to process the image
 
-from sklearn.ensemble import RandomForestRegressor
-
-# Assuming 'X_train' and 'y_train' are your training data
-# model = RandomForestRegressor()
-# model.fit(X_train, y_train)
-import os
-
-# file_path = 'model1.sav'
-
-# if os.path.exists(file_path) and os.path.getsize(file_path) > 0:
-#     with open(file_path, 'rb') as file:
-#         model = pickle.load(file)
-# else:
-#     st.error("Model file is missing or empty. Please ensure the model is properly saved.")
-#     st.stop()
-
+# Initialize expected_features to None
+expected_features = None
 
 # Load the trained model
 try:
     model = pickle.load(open('model.pkl', 'rb'))
-    expected_features = model.feature_names_in_ if hasattr(model, 'feature_names_in_') else None
+    if hasattr(model, 'feature_names_in_'):
+        expected_features = model.feature_names_in_
+    else:
+        st.warning("Model does not have 'feature_names_in_' attribute. Expected features are unknown.")
 except Exception as e:
     st.error(f"Error loading model: {str(e)}")
-if st.button('Stop App'):
-        st.stop()
+    model = None  # Ensure model is set to None if loading fails
+
+# if st.button('Stop App'):
+#     st.stop()
 
 # Title
 st.markdown(
@@ -82,13 +73,6 @@ with col2:
     engine_cylinders = st.selectbox("Engine Cylinders", [3, 4, 5, 6, 8])
     listing_color = st.selectbox("Listing Color", ["Yellow","Black", "White", "Red", "Blue", "Silver", "Gray", "Green"])
     wheel_Base = st.number_input("wheel Base", min_value=0, max_value=1000, step=5)
-# Categorical Inputs
-# body_type = st.selectbox("Body Type", ["Sedan", "SUV", "Hatchback", "Coupe", "Convertible", "Wagon", "Van"])
-# fuel_type = st.selectbox("Fuel Type", ["Petrol", "Diesel", "Electric", "Hybrid"])
-# maximum_seating = st.selectbox("Maximum Seating", [2, 4, 5, 7, 8])
-# engine_cylinders = st.selectbox("Engine Cylinders", [3, 4, 5, 6, 8])
-# make_name = st.selectbox("Make Name", ["Toyota", "Honda", "Ford", "BMW", "Audi", "Mercedes", "Chevrolet"])
-# listing_color = st.selectbox("Listing Color", ["Black", "White", "Red", "Blue", "Silver", "Gray", "Green"])
 
 # Create user input DataFrame for numeric features
 user_data = pd.DataFrame({
@@ -100,7 +84,7 @@ user_data = pd.DataFrame({
     "Height": [height],
     "Engine Displacement": [engine_displacement],
     "Mileage": [mileage],
-    "Wheel Base":[wheel_Base]
+    "WheelBase": [wheel_Base]  # Ensure this matches the model's expected feature name
 })
 
 # Create user input DataFrame for categorical features
@@ -147,9 +131,12 @@ st.dataframe(user_data)
 
 # Prediction
 if st.button("Predict Car Price"):
-    try:
-        # Make prediction
-        predicted_price = model.predict(user_data)
-        st.success(f'Predicted Car Price: ₹{np.round(predicted_price[0], 2)}')
-    except Exception as e:  
-        st.error(f"Prediction Error: {str(e)}")
+    if model is None:
+        st.error("Model is not loaded. Cannot make predictions.")
+    else:
+        try:
+            # Make prediction
+            predicted_price = model.predict(user_data)
+            st.success(f'Predicted Car Price: ₹{np.round(predicted_price[0], 2)}')
+        except Exception as e:  
+            st.error(f"Prediction Error: {str(e)}")
